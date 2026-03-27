@@ -13,13 +13,13 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
+import os
 from django.contrib import admin
-from django.urls import path, include
+from django.urls import path, include, reverse as django_reverse
 from rest_framework import routers
 from .views import UserViewSet, TeamViewSet, ActivityViewSet, LeaderboardViewSet, WorkoutViewSet
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from rest_framework.reverse import reverse
 
 router = routers.DefaultRouter()
 router.register(r'users', UserViewSet)
@@ -30,12 +30,20 @@ router.register(r'workouts', WorkoutViewSet)
 
 @api_view(['GET'])
 def api_root(request, format=None):
+    # Build absolute URLs using the Codespace public URL when available.
+    codespace = os.environ.get('CODESPACE_NAME')
+    if codespace:
+        base = f"https://{codespace}-8000.app.github.dev"
+    else:
+        scheme = 'https' if request.is_secure() else request.scheme
+        base = f"{scheme}://{request.get_host()}"
+
     return Response({
-        'users': reverse('user-list', request=request, format=format),
-        'teams': reverse('team-list', request=request, format=format),
-        'activities': reverse('activity-list', request=request, format=format),
-        'leaderboard': reverse('leaderboard-list', request=request, format=format),
-        'workouts': reverse('workout-list', request=request, format=format),
+        'users': base + django_reverse('user-list'),
+        'teams': base + django_reverse('team-list'),
+        'activities': base + django_reverse('activity-list'),
+        'leaderboard': base + django_reverse('leaderboard-list'),
+        'workouts': base + django_reverse('workout-list'),
     })
 
 urlpatterns = [
